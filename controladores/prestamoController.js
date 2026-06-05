@@ -1,6 +1,7 @@
 const Prestamo = require('../models/Prestamo');
 const Libro    = require('../models/Libro');
 const Usuario  = require('../models/Usuario');
+const { Op }   = require('sequelize');
 
 // USUARIO: Solicitar préstamo
 const solicitarPrestamo = async (req, res) => {
