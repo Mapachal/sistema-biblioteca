@@ -4,12 +4,14 @@ const Usuario = require("./modelos/usuario");
 const autenticacionRutas = require("./rutas/autenticacionRutas");
 const verificarToken = require("./middlewares/verificarToken");
 const usuarioRutas = require("./rutas/usuarioRutas");
-
+const libroRoutes = require('./routes/libroRoutes'); // Ajusta la ruta si es diferente
 const app = express();
 
 app.use(express.json());
 app.use("/auth", autenticacionRutas);
 app.use("/usuarios", usuarioRutas);
+app.use('/libros', libroRoutes);
+app.use('/usuario', libroRutas);
 
 app.get(
     "/perfil",
