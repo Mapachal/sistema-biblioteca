@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca – Mis Préstamos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --ink:#1a1209; --cream:#f7f2e8; --amber:#c8832a;
+      --muted:#7a6f5e; --card:#fffdf7; --red:#b03a2e;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+    nav {
+      background:var(--ink); color:var(--cream); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between; height:60px;
+      position:sticky; top:0; z-index:100;
+    }
+    .nav-brand { font-family:'Playfair Display',serif; font-size:1.3rem; }
+    .nav-links { display:flex; gap:8px; align-items:center; }
+    .nav-links a {
+      color:var(--cream); opacity:.7; text-decoration:none;
+      font-size:.875rem; padding:6px 14px; border-radius:8px; transition:opacity .2s,background .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { opacity:1; background:rgba(255,255,255,.12); }
+    .btn-logout {
+      background:transparent; color:var(--amber); border:1.5px solid var(--amber);
+      padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.875rem;
+      font-family:'DM Sans',sans-serif; transition:all .2s;
+    }
+    .btn-logout:hover { background:var(--amber); color:var(--ink); }
+    main { max-width:900px; margin:0 auto; padding:32px 20px; }
+    .page-title { font-family:'Playfair Display',serif; font-size:2rem; margin-bottom:8px; }
+    .page-subtitle { color:var(--muted); margin-bottom:28px; }
+    .filtros { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+    .filtro-btn {
+      padding:8px 18px; border:2px solid var(--ink); border-radius:20px;
+      background:transparent; font-family:'DM Sans',sans-serif; font-size:.875rem;
+      cursor:pointer; transition:all .2s; font-weight:500;
+    }
+    .filtro-btn.active, .filtro-btn:hover { background:var(--ink); color:var(--cream); }
+    .tabla-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:separate; border-spacing:0 8px; }
+    thead th {
+      text-align:left; font-size:.75rem; text-transform:uppercase;
+      letter-spacing:.8px; color:var(--muted); padding:0 16px 4px; font-weight:500;
+    }
+    tbody tr {
+      background:var(--card); border:2px solid var(--ink);
+      box-shadow:3px 3px 0 var(--ink); border-radius:12px;
+      transition:transform .2s,box-shadow .2s;
+    }
+    tbody tr:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+    tbody td {
+      padding:14px 16px; font-size:.9rem;
+      border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);
+    }
+    tbody td:first-child { border-left:2px solid var(--ink); border-radius:12px 0 0 12px; }
+    tbody td:last-child  { border-right:2px solid var(--ink); border-radius:0 12px 12px 0; }
+    .badge {
+      display:inline-block; padding:3px 12px; border-radius:20px;
+      font-size:.75rem; font-weight:500; border:1.5px solid;
+    }
+    .badge-pendiente { background:#fff8e1; color:#f57f17; border-color:#ffd54f; }
+    .badge-prestado  { background:#e3f2fd; color:#1565c0; border-color:#64b5f6; }
+    .badge-devuelto  { background:#e6f4ea; color:#2e7d32; border-color:#66bb6a; }
+    .codigo { font-family:monospace; font-size:.8rem; color:var(--muted); }
+    .empty { text-align:center; padding:60px; color:var(--muted); }
+    .toast {
+      position:fixed; bottom:24px; right:24px; padding:12px 20px;
+      border-radius:10px; border:2px solid var(--ink); font-size:.875rem;
+      font-weight:500; box-shadow:4px 4px 0 var(--ink);
+      transform:translateY(80px); opacity:0; transition:all .3s ease; z-index:999;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.error { background:#fde8e6; color:var(--red); }
+    .toast.ok    { background:#e6f4ea; color:#2e7d32; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="nav-brand">📚 Biblioteca</span>
+    <div class="nav-links">
+      <a href="/catalogo">Catálogo</a>
+      <a href="/prestamos" class="active">Mis préstamos</a>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+  <main>
+    <h1 class="page-title">Mis préstamos</h1>
+    <p class="page-subtitle">Historial y estado de tus solicitudes</p>
+    <div class="filtros">
+      <button class="filtro-btn active" onclick="filtrar('todos', this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('pendiente', this)">Pendientes</button>
+      <button class="filtro-btn" onclick="filtrar('prestado', this)">Prestados</button>
+      <button class="filtro-btn" onclick="filtrar('devuelto', this)">Devueltos</button>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Libro</th>
+            <th>Autor</th>
+            <th>Estado</th>
+            <th>Fecha solicitud</th>
+            <th>Fecha límite</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty" class="empty" style="display:none">No tienes préstamos en este estado.</div>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/';
+    let todos = [];
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+    function showToast(msg, type='error') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.className='toast', 3000);
+    }
+    function fmtDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+    }
+    function badgeClass(e) {
+      return { pendiente:'badge-pendiente', prestado:'badge-prestado', devuelto:'badge-devuelto' }[e] || '';
+    }
+    function render(lista) {
+      const tbody = document.getElementById('tbody');
+      const empty = document.getElementById('empty');
+      if (!lista.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+      empty.style.display='none';
+      tbody.innerHTML = lista.map(p => `
+        <tr>
+          <td class="codigo">${p.codigoPrestamo}</td>
+          <td><strong>${p.libro?.titulo || '—'}</strong></td>
+          <td>${p.libro?.autor || '—'}</td>
+          <td><span class="badge ${badgeClass(p.estado)}">${p.estado}</span></td>
+          <td>${fmtDate(p.fechaSolicitud)}</td>
+          <td>${fmtDate(p.fechaLimite)}</td>
+        </tr>
+      `).join('');
+    }
+    function filtrar(estado, btn) {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render(estado === 'todos' ? todos : todos.filter(p => p.estado === estado));
+    }
+    async function cargar() {
+      try {
+        const res  = await fetch('/api/prestamos/mis', { headers:{ Authorization: token } });
+        todos = await res.json();
+        render(todos);
+      } catch { showToast('Error al cargar préstamos'); }
+    }
+    cargar();
+  </script>
+</body>
+</html>

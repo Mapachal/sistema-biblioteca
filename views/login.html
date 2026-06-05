@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca – Iniciar Sesión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1209;
+      --cream: #f7f2e8;
+      --amber: #c8832a;
+      --amber-light: #f0c97a;
+      --red: #b03a2e;
+      --muted: #7a6f5e;
+      --card: #fffdf7;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: repeating-linear-gradient(
+        0deg, transparent, transparent 39px,
+        rgba(200,131,42,0.08) 39px, rgba(200,131,42,0.08) 40px
+      );
+    }
+    .wrapper {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      animation: fadeUp .5s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px; height: 64px;
+      background: var(--amber);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      font-size: 28px;
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+    .logo h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+    }
+    .logo p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+    .card {
+      background: var(--card);
+      border: 2px solid var(--ink);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 6px 6px 0 var(--ink);
+    }
+    .card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+      color: var(--ink);
+    }
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      background: var(--cream);
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      margin-bottom: 18px;
+    }
+    input:focus {
+      border-color: var(--amber);
+      box-shadow: 3px 3px 0 var(--amber);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--ink);
+      color: var(--cream);
+      border: 2px solid var(--ink);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, transform .1s, box-shadow .2s;
+      box-shadow: 3px 3px 0 var(--amber);
+    }
+    .btn:hover { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+    .btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--amber); }
+    .link-row {
+      text-align: center;
+      margin-top: 20px;
+      font-size: .875rem;
+      color: var(--muted);
+    }
+    .link-row a { color: var(--amber); font-weight: 500; text-decoration: none; }
+    .link-row a:hover { text-decoration: underline; }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+      font-size: .875rem;
+      font-weight: 500;
+      box-shadow: 4px 4px 0 var(--ink);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s ease;
+      z-index: 999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: #fde8e6; color: var(--red); }
+    .toast.ok    { background: #e6f4ea; color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <h1>Biblioteca</h1>
+      <p>Sistema de gestión de préstamos</p>
+    </div>
+    <div class="card">
+      <h2>Iniciar sesión</h2>
+      <label for="correo">Correo electrónico</label>
+      <input type="email" id="correo" placeholder="usuario@correo.com" />
+      <label for="pass">Contraseña</label>
+      <input type="password" id="pass" placeholder="••••••••" />
+      <button class="btn" onclick="login()">Entrar</button>
+    </div>
+    <div class="link-row">
+      ¿No tienes cuenta? <a href="/registro">Regístrate aquí</a>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function showToast(msg, type='error') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    async function login() {
+      const correo    = document.getElementById('correo').value.trim();
+      const contraseña = document.getElementById('pass').value;
+      if (!correo || !contraseña) return showToast('Completa todos los campos');
+
+      try {
+        const res  = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo, contraseña })
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.mensaje || 'Error al iniciar sesión');
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('rol',   data.rol);
+        localStorage.setItem('nombre', data.nombre);
+        showToast('¡Bienvenido!', 'ok');
+        setTimeout(() => {
+          window.location.href = data.rol === 'admin' ? '/admin' : '/catalogo';
+        }, 800);
+      } catch {
+        showToast('Error de conexión con el servidor');
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  </script>
+</body>
+</html>

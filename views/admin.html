@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca – Panel Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --ink:#1a1209; --cream:#f7f2e8; --amber:#c8832a;
+      --muted:#7a6f5e; --card:#fffdf7; --red:#b03a2e;
+      --sidebar-w: 220px;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; }
+    /* ── Sidebar ── */
+    .sidebar {
+      width:var(--sidebar-w); background:var(--ink); color:var(--cream);
+      padding:24px 0; display:flex; flex-direction:column;
+      position:fixed; top:0; left:0; height:100vh; z-index:100;
+    }
+    .sidebar-brand {
+      font-family:'Playfair Display',serif; font-size:1.25rem;
+      padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,.1);
+      display:flex; align-items:center; gap:10px;
+    }
+    .sidebar-section { padding:16px 20px 8px; font-size:.7rem; text-transform:uppercase;
+      letter-spacing:1px; color:rgba(255,255,255,.4); }
+    .sidebar a {
+      display:flex; align-items:center; gap:10px; padding:10px 20px;
+      color:rgba(255,255,255,.7); text-decoration:none; font-size:.9rem;
+      transition:all .2s; border-left:3px solid transparent;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      color:var(--cream); background:rgba(255,255,255,.07); border-left-color:var(--amber);
+    }
+    .sidebar-footer {
+      margin-top:auto; padding:16px 20px;
+      border-top:1px solid rgba(255,255,255,.1);
+    }
+    .btn-logout {
+      width:100%; padding:10px; background:transparent; color:var(--amber);
+      border:1.5px solid var(--amber); border-radius:8px; cursor:pointer;
+      font-family:'DM Sans',sans-serif; font-size:.875rem; transition:all .2s;
+    }
+    .btn-logout:hover { background:var(--amber); color:var(--ink); }
+    /* ── Main ── */
+    .main-content { margin-left:var(--sidebar-w); flex:1; padding:32px; }
+    .page-title { font-family:'Playfair Display',serif; font-size:1.9rem; margin-bottom:4px; }
+    .page-subtitle { color:var(--muted); margin-bottom:28px; }
+    /* ── Stats ── */
+    .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+    .stat-card {
+      background:var(--card); border:2px solid var(--ink); border-radius:14px;
+      padding:20px; box-shadow:4px 4px 0 var(--ink);
+    }
+    .stat-val { font-family:'Playfair Display',serif; font-size:2.2rem; }
+    .stat-label { color:var(--muted); font-size:.8rem; margin-top:4px; }
+    /* ── Secciones ── */
+    .section { display:none; }
+    .section.active { display:block; }
+    /* ── Cards y tablas ── */
+    .card {
+      background:var(--card); border:2px solid var(--ink); border-radius:16px;
+      padding:24px; box-shadow:4px 4px 0 var(--ink); margin-bottom:24px;
+    }
+    .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .card-title { font-family:'Playfair Display',serif; font-size:1.25rem; }
+    .btn {
+      padding:9px 18px; border:2px solid var(--ink); border-radius:8px;
+      font-family:'DM Sans',sans-serif; font-size:.875rem; cursor:pointer;
+      font-weight:500; transition:all .2s; box-shadow:2px 2px 0 var(--ink);
+    }
+    .btn:active { transform:translate(1px,1px); box-shadow:none; }
+    .btn-primary { background:var(--ink); color:var(--cream); }
+    .btn-primary:hover { background:var(--amber); color:var(--ink); border-color:var(--amber); }
+    .btn-amber { background:var(--amber); color:var(--ink); }
+    .btn-amber:hover { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+    .btn-sm { padding:5px 12px; font-size:.78rem; }
+    .btn-danger { background:#fde8e6; color:var(--red); border-color:var(--red); }
+    .btn-danger:hover { background:var(--red); color:#fff; }
+    table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+    thead th {
+      text-align:left; font-size:.73rem; text-transform:uppercase;
+      letter-spacing:.8px; color:var(--muted); padding:0 12px 4px; font-weight:500;
+    }
+    tbody tr {
+      background:var(--cream); border-radius:10px;
+    }
+    tbody td {
+      padding:12px; font-size:.875rem;
+      border-top:1.5px solid rgba(26,18,9,.15);
+      border-bottom:1.5px solid rgba(26,18,9,.15);
+    }
+    tbody td:first-child { border-left:1.5px solid rgba(26,18,9,.15); border-radius:10px 0 0 10px; padding-left:14px; }
+    tbody td:last-child  { border-right:1.5px solid rgba(26,18,9,.15); border-radius:0 10px 10px 0; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.73rem; font-weight:500; border:1.5px solid; }
+    .badge-pendiente { background:#fff8e1; color:#f57f17; border-color:#ffd54f; }
+    .badge-prestado  { background:#e3f2fd; color:#1565c0; border-color:#64b5f6; }
+    .badge-devuelto  { background:#e6f4ea; color:#2e7d32; border-color:#66bb6a; }
+    .badge-admin     { background:#f3e5f5; color:#6a1b9a; border-color:#ce93d8; }
+    .badge-usuario   { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
+    /* ── Formularios en modal ── */
+    .overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(26,18,9,.5); z-index:200; align-items:center; justify-content:center;
+    }
+    .overlay.open { display:flex; }
+    .modal {
+      background:var(--card); border:2px solid var(--ink); border-radius:20px;
+      padding:32px; width:100%; max-width:440px; box-shadow:8px 8px 0 var(--ink);
+      animation:popIn .25s ease;
+    }
+    @keyframes popIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+    .modal h3 { font-family:'Playfair Display',serif; font-size:1.25rem; margin-bottom:20px; }
+    .modal label { display:block; font-size:.78rem; font-weight:500; text-transform:uppercase;
+      letter-spacing:.7px; color:var(--muted); margin-bottom:5px; }
+    .modal input, .modal select {
+      width:100%; padding:10px 12px; border:2px solid var(--ink); border-radius:8px;
+      font-family:'DM Sans',sans-serif; font-size:.95rem; background:var(--cream);
+      color:var(--ink); outline:none; transition:border-color .2s; margin-bottom:14px;
+    }
+    .modal input:focus, .modal select:focus { border-color:var(--amber); }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+    /* ── Filtros ── */
+    .filtros { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+    .filtro-btn {
+      padding:6px 16px; border:2px solid var(--ink); border-radius:20px;
+      background:transparent; font-family:'DM Sans',sans-serif; font-size:.8rem;
+      cursor:pointer; transition:all .2s; font-weight:500;
+    }
+    .filtro-btn.active, .filtro-btn:hover { background:var(--ink); color:var(--cream); }
+    /* ── Toast ── */
+    .toast {
+      position:fixed; bottom:24px; right:24px; padding:12px 20px;
+      border-radius:10px; border:2px solid var(--ink); font-size:.875rem;
+      font-weight:500; box-shadow:4px 4px 0 var(--ink);
+      transform:translateY(80px); opacity:0; transition:all .3s; z-index:999;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.error { background:#fde8e6; color:var(--red); }
+    .toast.ok    { background:#e6f4ea; color:#2e7d32; }
+    .codigo { font-family:monospace; font-size:.78rem; color:var(--muted); }
+    .actions { display:flex; gap:6px; flex-wrap:wrap; }
+    @media(max-width:700px) {
+      .sidebar { width:60px; }
+      .sidebar-brand span, .sidebar a span, .sidebar-section, .sidebar-footer { display:none; }
+      .main-content { margin-left:60px; padding:16px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">📚 <span>Admin</span></div>
+    <div class="sidebar-section">Panel</div>
+    <a href="#" class="active" onclick="show('inicio',this)">🏠 <span>Inicio</span></a>
+    <div class="sidebar-section">Gestión</div>
+    <a href="#" onclick="show('prestamos',this)">📋 <span>Préstamos</span></a>
+    <a href="#" onclick="show('libros',this)">📚 <span>Libros</span></a>
+    <a href="#" onclick="show('usuarios',this)">👥 <span>Usuarios</span></a>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <!-- ── Inicio ── -->
+    <section class="section active" id="s-inicio">
+      <h1 class="page-title">Panel de administración</h1>
+      <p class="page-subtitle" id="saludo-admin">Bienvenido</p>
+      <div class="stats" id="stats">
+        <div class="stat-card"><div class="stat-val" id="st-libros">—</div><div class="stat-label">Libros en catálogo</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-usuarios">—</div><div class="stat-label">Usuarios registrados</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-pendientes">—</div><div class="stat-label">Solicitudes pendientes</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-prestados">—</div><div class="stat-label">Libros prestados</div></div>
+      </div>
+    </section>
+
+    <!-- ── Préstamos ── -->
+    <section class="section" id="s-prestamos">
+      <h1 class="page-title">Gestión de préstamos</h1>
+      <p class="page-subtitle">Aprueba solicitudes y registra devoluciones</p>
+      <div class="filtros">
+        <button class="filtro-btn active" onclick="filtrarPrestamos('todos',this)">Todos</button>
+        <button class="filtro-btn" onclick="filtrarPrestamos('pendiente',this)">Pendientes</button>
+        <button class="filtro-btn" onclick="filtrarPrestamos('prestado',this)">Prestados</button>
+        <button class="filtro-btn" onclick="filtrarPrestamos('devuelto',this)">Devueltos</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto;padding:16px">
+          <table>
+            <thead><tr>
+              <th>Código</th><th>Usuario</th><th>Libro</th>
+              <th>Estado</th><th>F. Solicitud</th><th>F. Límite</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="tbody-prestamos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Libros ── -->
+    <section class="section" id="s-libros">
+      <h1 class="page-title">Gestión de libros</h1>
+      <p class="page-subtitle">Administra el catálogo de la biblioteca</p>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Catálogo</span>
+          <button class="btn btn-primary" onclick="abrirModalLibro()">+ Nuevo libro</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Categoría</th><th>Stock</th><th>Acciones</th></tr></thead>
+            <tbody id="tbody-libros"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Usuarios ── -->
+    <section class="section" id="s-usuarios">
+      <h1 class="page-title">Gestión de usuarios</h1>
+      <p class="page-subtitle">Administra los usuarios del sistema</p>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Usuarios</span>
+          <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr></thead>
+            <tbody id="tbody-usuarios"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Modal Libro ── -->
+  <div class="overlay" id="modal-libro">
+    <div class="modal">
+      <h3 id="modal-libro-title">Nuevo libro</h3>
+      <input type="hidden" id="libro-id"/>
+      <label>Título</label>
+      <input type="text" id="libro-titulo" placeholder="Título del libro"/>
+      <label>Autor</label>
+      <input type="text" id="libro-autor" placeholder="Nombre del autor"/>
+      <label>Categoría</label>
+      <input type="text" id="libro-cat" placeholder="Ej: Novela, Ciencia, Historia"/>
+      <label>Cantidad</label>
+      <input type="number" id="libro-cantidad" min="0" placeholder="1"/>
+      <div class="modal-footer">
+        <button class="btn" onclick="cerrarModal('modal-libro')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarLibro()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Usuario ── -->
+  <div class="overlay" id="modal-usuario">
+    <div class="modal">
+      <h3 id="modal-usuario-title">Nuevo usuario</h3>
+      <input type="hidden" id="usr-id"/>
+      <label>Nombre</label>
+      <input type="text" id="usr-nombre" placeholder="Nombre completo"/>
+      <label>Correo</label>
+      <input type="email" id="usr-correo" placeholder="correo@ejemplo.com"/>
+      <label id="pass-label">Contraseña</label>
+      <input type="password" id="usr-pass" placeholder="Contraseña"/>
+      <label>Rol</label>
+      <select id="usr-rol">
+        <option value="usuario">Usuario</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <div class="modal-footer">
+        <button class="btn" onclick="cerrarModal('modal-usuario')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const rol   = localStorage.getItem('rol');
+    if (!token || rol !== 'admin') window.location.href = '/';
+
+    document.getElementById('saludo-admin').textContent =
+      `Bienvenido, ${localStorage.getItem('nombre') || 'Administrador'}`;
+
+    let allPrestamos = [];
+
+    function logout() { localStorage.clear(); window.location.href = '/'; }
+    function showToast(msg, type='error') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.className='toast', 3500);
+    }
+    function show(sec, el) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+      document.getElementById('s-' + sec).classList.add('active');
+      if (el) el.classList.add('active');
+      if (sec === 'prestamos') cargarPrestamos();
+      if (sec === 'libros')    cargarLibros();
+      if (sec === 'usuarios')  cargarUsuarios();
+    }
+    function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
+    function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+    function fmtDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+    }
+    function badgeClass(e) {
+      return { pendiente:'badge-pendiente', prestado:'badge-prestado', devuelto:'badge-devuelto' }[e] || '';
+    }
+
+    // ── STATS ────────────────────────────────
+    async function cargarStats() {
+      try {
+        const [libros, usuarios, prestamos] = await Promise.all([
+          fetch('/api/libros',    { headers:{ Authorization: token } }).then(r=>r.json()),
+          fetch('/api/usuarios',  { headers:{ Authorization: token } }).then(r=>r.json()),
+          fetch('/api/prestamos', { headers:{ Authorization: token } }).then(r=>r.json()),
+        ]);
+        document.getElementById('st-libros').textContent    = libros.length;
+        document.getElementById('st-usuarios').textContent  = usuarios.length;
+        document.getElementById('st-pendientes').textContent = prestamos.filter(p=>p.estado==='pendiente').length;
+        document.getElementById('st-prestados').textContent  = prestamos.filter(p=>p.estado==='prestado').length;
+      } catch {}
+    }
+
+    // ── PRÉSTAMOS ────────────────────────────
+    async function cargarPrestamos() {
+      try {
+        const res = await fetch('/api/prestamos', { headers:{ Authorization: token } });
+        allPrestamos = await res.json();
+        renderPrestamos(allPrestamos);
+      } catch { showToast('Error al cargar préstamos'); }
+    }
+    function filtrarPrestamos(estado, btn) {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPrestamos(estado === 'todos' ? allPrestamos : allPrestamos.filter(p=>p.estado===estado));
+    }
+    function renderPrestamos(lista) {
+      const tb = document.getElementById('tbody-prestamos');
+      if (!lista.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Sin registros</td></tr>'; return; }
+      tb.innerHTML = lista.map(p => `
+        <tr>
+          <td class="codigo">${p.codigoPrestamo}</td>
+          <td>${p.usuario?.nombre || '—'}<br><small style="color:var(--muted)">${p.usuario?.correo||''}</small></td>
+          <td>${p.libro?.titulo || '—'}<br><small style="color:var(--muted)">${p.libro?.autor||''}</small></td>
+          <td><span class="badge ${badgeClass(p.estado)}">${p.estado}</span></td>
+          <td>${fmtDate(p.fechaSolicitud)}</td>
+          <td>${fmtDate(p.fechaLimite)}</td>
+          <td class="actions">
+            ${p.estado === 'pendiente' ? `<button class="btn btn-sm btn-amber" onclick="aprobar(${p.id})">Aprobar</button>` : ''}
+            ${p.estado === 'prestado'  ? `<button class="btn btn-sm btn-primary" onclick="devolver(${p.id})">Devolver</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+    async function aprobar(id) {
+      if (!confirm('¿Aprobar este préstamo?')) return;
+      const res  = await fetch(`/api/prestamos/${id}/aprobar`, { method:'PUT', headers:{ Authorization: token } });
+      const data = await res.json();
+      showToast(data.mensaje, res.ok ? 'ok' : 'error');
+      if (res.ok) { cargarPrestamos(); cargarStats(); }
+    }
+    async function devolver(id) {
+      if (!confirm('¿Registrar devolución?')) return;
+      const res  = await fetch(`/api/prestamos/${id}/devolucion`, { method:'PUT', headers:{ Authorization: token } });
+      const data = await res.json();
+      showToast(data.mensaje, res.ok ? 'ok' : 'error');
+      if (res.ok) { cargarPrestamos(); cargarStats(); }
+    }
+
+    // ── LIBROS ───────────────────────────────
+    async function cargarLibros() {
+      try {
+        const res    = await fetch('/api/libros', { headers:{ Authorization: token } });
+        const libros = await res.json();
+        const tb = document.getElementById('tbody-libros');
+        tb.innerHTML = libros.map(l => `
+          <tr>
+            <td>${l.id}</td>
+            <td><strong>${l.titulo}</strong></td>
+            <td>${l.autor}</td>
+            <td>${l.categoria}</td>
+            <td><span class="badge ${l.cantidad>0?'badge-devuelto':'badge-pendiente'}">${l.cantidad}</span></td>
+            <td class="actions">
+              <button class="btn btn-sm" onclick="editarLibro(${l.id},'${l.titulo.replace(/'/g,"\\'")}','${l.autor.replace(/'/g,"\\'")}','${l.categoria.replace(/'/g,"\\'")}',${l.cantidad})">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminarLibro(${l.id})">Eliminar</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch { showToast('Error al cargar libros'); }
+    }
+    function abrirModalLibro() {
+      document.getElementById('libro-id').value = '';
+      document.getElementById('libro-titulo').value = '';
+      document.getElementById('libro-autor').value = '';
+      document.getElementById('libro-cat').value = '';
+      document.getElementById('libro-cantidad').value = 1;
+      document.getElementById('modal-libro-title').textContent = 'Nuevo libro';
+      abrirModal('modal-libro');
+    }
+    function editarLibro(id, titulo, autor, cat, cantidad) {
+      document.getElementById('libro-id').value = id;
+      document.getElementById('libro-titulo').value = titulo;
+      document.getElementById('libro-autor').value = autor;
+      document.getElementById('libro-cat').value = cat;
+      document.getElementById('libro-cantidad').value = cantidad;
+      document.getElementById('modal-libro-title').textContent = 'Editar libro';
+      abrirModal('modal-libro');
+    }
+    async function guardarLibro() {
+      const id       = document.getElementById('libro-id').value;
+      const titulo   = document.getElementById('libro-titulo').value.trim();
+      const autor    = document.getElementById('libro-autor').value.trim();
+      const categoria = document.getElementById('libro-cat').value.trim();
+      const cantidad = parseInt(document.getElementById('libro-cantidad').value);
+      if (!titulo || !autor || !categoria) return showToast('Completa todos los campos');
+      const url    = id ? `/api/libros/${id}` : '/api/libros';
+      const method = id ? 'PUT' : 'POST';
+      const res    = await fetch(url, {
+        method, headers:{ 'Content-Type':'application/json', Authorization: token },
+        body: JSON.stringify({ titulo, autor, categoria, cantidad })
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || data.mensaje || 'Error');
+      showToast(id ? 'Libro actualizado' : 'Libro creado', 'ok');
+      cerrarModal('modal-libro'); cargarLibros(); cargarStats();
+    }
+    async function eliminarLibro(id) {
+      if (!confirm('¿Eliminar este libro?')) return;
+      const res = await fetch(`/api/libros/${id}`, { method:'DELETE', headers:{ Authorization: token } });
+      const data = await res.json();
+      showToast(data.mensaje, res.ok ? 'ok' : 'error');
+      if (res.ok) { cargarLibros(); cargarStats(); }
+    }
+
+    // ── USUARIOS ─────────────────────────────
+    async function cargarUsuarios() {
+      try {
+        const res      = await fetch('/api/usuarios', { headers:{ Authorization: token } });
+        const usuarios = await res.json();
+        const tb = document.getElementById('tbody-usuarios');
+        tb.innerHTML = usuarios.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.nombre}</td>
+            <td>${u.correo}</td>
+            <td><span class="badge ${u.rol==='admin'?'badge-admin':'badge-usuario'}">${u.rol}</span></td>
+            <td class="actions">
+              <button class="btn btn-sm" onclick="editarUsuario(${u.id},'${u.nombre.replace(/'/g,"\\'")}','${u.correo}','${u.rol}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${u.id})">Eliminar</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch { showToast('Error al cargar usuarios'); }
+    }
+    function abrirModalUsuario() {
+      document.getElementById('usr-id').value = '';
+      document.getElementById('usr-nombre').value = '';
+      document.getElementById('usr-correo').value = '';
+      document.getElementById('usr-pass').value = '';
+      document.getElementById('usr-rol').value = 'usuario';
+      document.getElementById('modal-usuario-title').textContent = 'Nuevo usuario';
+      document.getElementById('pass-label').textContent = 'Contraseña';
+      document.getElementById('usr-pass').placeholder = 'Contraseña';
+      document.getElementById('usr-pass').required = true;
+      abrirModal('modal-usuario');
+    }
+    function editarUsuario(id, nombre, correo, rol) {
+      document.getElementById('usr-id').value = id;
+      document.getElementById('usr-nombre').value = nombre;
+      document.getElementById('usr-correo').value = correo;
+      document.getElementById('usr-pass').value = '';
+      document.getElementById('usr-rol').value = rol;
+      document.getElementById('modal-usuario-title').textContent = 'Editar usuario';
+      document.getElementById('pass-label').textContent = 'Nueva contraseña (dejar vacío para no cambiar)';
+      document.getElementById('usr-pass').placeholder = 'Sin cambios';
+      abrirModal('modal-usuario');
+    }
+    async function guardarUsuario() {
+      const id         = document.getElementById('usr-id').value;
+      const nombre     = document.getElementById('usr-nombre').value.trim();
+      const correo     = document.getElementById('usr-correo').value.trim();
+      const contraseña = document.getElementById('usr-pass').value;
+      const rol        = document.getElementById('usr-rol').value;
+      if (!nombre || !correo) return showToast('Nombre y correo son obligatorios');
+      if (!id && !contraseña) return showToast('La contraseña es obligatoria al crear un usuario');
+      const body = id ? { nombre, correo, rol } : { nombre, correo, contraseña, rol };
+      const url    = id ? `/api/usuarios/${id}` : '/api/usuarios';
+      const method = id ? 'PUT' : 'POST';
+      const res    = await fetch(url, {
+        method, headers:{ 'Content-Type':'application/json', Authorization: token },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.mensaje || 'Error');
+      showToast(id ? 'Usuario actualizado' : 'Usuario creado', 'ok');
+      cerrarModal('modal-usuario'); cargarUsuarios(); cargarStats();
+    }
+    async function eliminarUsuario(id) {
+      if (!confirm('¿Eliminar este usuario?')) return;
+      const res  = await fetch(`/api/usuarios/${id}`, { method:'DELETE', headers:{ Authorization: token } });
+      const data = await res.json();
+      showToast(data.mensaje, res.ok ? 'ok' : 'error');
+      if (res.ok) { cargarUsuarios(); cargarStats(); }
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.querySelectorAll('.overlay').forEach(o => {
+      o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+    });
+
+    cargarStats();
+  </script>
+</body>
+</html>

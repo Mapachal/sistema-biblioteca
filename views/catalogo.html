@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca – Catálogo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --ink:#1a1209; --cream:#f7f2e8; --amber:#c8832a;
+      --amber-bg:#fdf3de; --muted:#7a6f5e; --card:#fffdf7; --red:#b03a2e;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+    nav {
+      background:var(--ink); color:var(--cream); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between; height:60px;
+      position:sticky; top:0; z-index:100;
+    }
+    .nav-brand { font-family:'Playfair Display',serif; font-size:1.3rem; }
+    .nav-links { display:flex; gap:8px; align-items:center; }
+    .nav-links a {
+      color:var(--cream); opacity:.7; text-decoration:none;
+      font-size:.875rem; padding:6px 14px; border-radius:8px; transition:opacity .2s,background .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { opacity:1; background:rgba(255,255,255,.12); }
+    .btn-logout {
+      background:transparent; color:var(--amber); border:1.5px solid var(--amber);
+      padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.875rem;
+      font-family:'DM Sans',sans-serif; transition:all .2s;
+    }
+    .btn-logout:hover { background:var(--amber); color:var(--ink); }
+    main { max-width:1100px; margin:0 auto; padding:32px 20px; }
+    .page-title { font-family:'Playfair Display',serif; font-size:2rem; margin-bottom:8px; }
+    .page-subtitle { color:var(--muted); margin-bottom:28px; }
+    .search-bar {
+      display:flex; gap:10px; margin-bottom:28px;
+    }
+    .search-bar input {
+      flex:1; padding:12px 16px; border:2px solid var(--ink); border-radius:10px;
+      font-family:'DM Sans',sans-serif; font-size:1rem; background:var(--card);
+      outline:none; transition:border-color .2s;
+    }
+    .search-bar input:focus { border-color:var(--amber); }
+    .btn-search {
+      padding:12px 22px; background:var(--amber); color:var(--ink);
+      border:2px solid var(--ink); border-radius:10px; font-family:'DM Sans',sans-serif;
+      font-size:1rem; cursor:pointer; font-weight:500;
+      box-shadow:3px 3px 0 var(--ink); transition:transform .1s,box-shadow .1s;
+    }
+    .btn-search:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; }
+    .book-card {
+      background:var(--card); border:2px solid var(--ink); border-radius:16px;
+      padding:22px 20px; box-shadow:4px 4px 0 var(--ink);
+      transition:transform .2s,box-shadow .2s; display:flex; flex-direction:column; gap:8px;
+    }
+    .book-card:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--ink); }
+    .book-cover {
+      height:80px; background:var(--amber-bg); border:1.5px solid rgba(200,131,42,.3);
+      border-radius:10px; display:flex; align-items:center; justify-content:center;
+      font-size:2rem; margin-bottom:4px;
+    }
+    .book-title { font-family:'Playfair Display',serif; font-size:1.05rem; line-height:1.3; }
+    .book-author { color:var(--muted); font-size:.85rem; }
+    .badge {
+      display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem;
+      font-weight:500; border:1.5px solid;
+    }
+    .badge-cat { background:var(--amber-bg); color:var(--amber); border-color:var(--amber); }
+    .badge-ok  { background:#e6f4ea; color:#2e7d32; border-color:#66bb6a; }
+    .badge-no  { background:#fde8e6; color:var(--red); border-color:var(--red); }
+    .stock { font-size:.8rem; color:var(--muted); margin-top:auto; }
+    .btn-pedir {
+      margin-top:8px; width:100%; padding:10px;
+      background:var(--ink); color:var(--cream); border:2px solid var(--ink);
+      border-radius:8px; font-family:'DM Sans',sans-serif; font-size:.9rem;
+      cursor:pointer; font-weight:500; transition:background .2s;
+    }
+    .btn-pedir:hover { background:var(--amber); color:var(--ink); border-color:var(--amber); }
+    .btn-pedir:disabled { background:#ccc; border-color:#ccc; cursor:not-allowed; }
+    .empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:1.1rem; }
+    .toast {
+      position:fixed; bottom:24px; right:24px; padding:12px 20px;
+      border-radius:10px; border:2px solid var(--ink); font-size:.875rem;
+      font-weight:500; box-shadow:4px 4px 0 var(--ink);
+      transform:translateY(80px); opacity:0; transition:all .3s ease; z-index:999;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.error { background:#fde8e6; color:var(--red); }
+    .toast.ok    { background:#e6f4ea; color:#2e7d32; }
+    .nombre-usuario { font-size:.85rem; opacity:.7; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="nav-brand">📚 Biblioteca</span>
+    <div class="nav-links">
+      <span class="nombre-usuario" id="saludo"></span>
+      <a href="/catalogo" class="active">Catálogo</a>
+      <a href="/prestamos">Mis préstamos</a>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </nav>
+  <main>
+    <h1 class="page-title">Catálogo de libros</h1>
+    <p class="page-subtitle">Busca y solicita préstamos de los libros disponibles</p>
+    <div class="search-bar">
+      <input type="text" id="busqueda" placeholder="Buscar por título..." onkeydown="if(event.key==='Enter')buscar()" />
+      <button class="btn-search" onclick="buscar()">Buscar</button>
+      <button class="btn-search" style="background:var(--cream)" onclick="cargarLibros()">Ver todos</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/';
+
+    const nombre = localStorage.getItem('nombre') || '';
+    document.getElementById('saludo').textContent = `Hola, ${nombre}`;
+
+    function logout() {
+      localStorage.clear(); window.location.href = '/';
+    }
+    function showToast(msg, type='error') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.className='toast', 3000);
+    }
+    function renderLibros(libros) {
+      const grid = document.getElementById('grid');
+      if (!libros.length) { grid.innerHTML = '<p class="empty">No se encontraron libros.</p>'; return; }
+      const emojis = ['📖','📗','📘','📙','📕','📒'];
+      grid.innerHTML = libros.map((l,i) => `
+        <div class="book-card">
+          <div class="book-cover">${emojis[i % emojis.length]}</div>
+          <div class="book-title">${l.titulo}</div>
+          <div class="book-author">${l.autor}</div>
+          <span class="badge badge-cat">${l.categoria}</span>
+          <div class="stock">
+            <span class="badge ${l.cantidad > 0 ? 'badge-ok':'badge-no'}">
+              ${l.cantidad > 0 ? `${l.cantidad} disponible(s)` : 'Sin stock'}
+            </span>
+          </div>
+          <button class="btn-pedir" ${l.cantidad < 1 ? 'disabled' : ''} onclick="solicitar(${l.id})">
+            ${l.cantidad > 0 ? 'Solicitar préstamo' : 'No disponible'}
+          </button>
+        </div>
+      `).join('');
+    }
+    async function cargarLibros() {
+      try {
+        const res  = await fetch('/api/libros', { headers:{ Authorization: token } });
+        const data = await res.json();
+        renderLibros(data);
+      } catch { showToast('Error al cargar libros'); }
+    }
+    async function buscar() {
+      const titulo = document.getElementById('busqueda').value.trim();
+      if (!titulo) return cargarLibros();
+      try {
+        const res  = await fetch(`/api/libros/buscar?titulo=${encodeURIComponent(titulo)}`, { headers:{ Authorization: token } });
+        const data = await res.json();
+        renderLibros(data);
+      } catch { showToast('Error al buscar'); }
+    }
+    async function solicitar(libroId) {
+      try {
+        const res  = await fetch('/api/prestamos', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', Authorization: token },
+          body: JSON.stringify({ libroId })
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.mensaje || 'Error');
+        showToast('¡Solicitud enviada! Código: ' + data.prestamo.codigoPrestamo, 'ok');
+        cargarLibros();
+      } catch { showToast('Error al solicitar'); }
+    }
+    cargarLibros();
+  </script>
+</body>
+</html>
