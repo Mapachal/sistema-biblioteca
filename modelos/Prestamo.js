@@ -50,12 +50,17 @@ const Prestamo = conexion.define('Prestamo', {
   tableName: 'prestamos',
   timestamps: true,
   hooks: {
-    beforeCreate: (prestamo) => {
-      // Genera código único de 16 caracteres con crypto
-      prestamo.codigoPrestamo = crypto
-        .randomBytes(8)
-        .toString('hex')
-        .toUpperCase();
+    beforeCreate: async (prestamo) => {
+      try {
+        // Genera código único de 16 caracteres con crypto
+        prestamo.codigoPrestamo = crypto
+          .randomBytes(8)
+          .toString('hex')
+          .toUpperCase();
+      } catch (err) {
+        console.error('Error en hook beforeCreate:', err);
+        throw err;
+      }
     }
   }
 });
