@@ -18,7 +18,7 @@ PRUEBA 1 - REGISTRO Y LOGIN:
 
 PRUEBA 2 - SOLICITAR PRÉSTAMO:
 - En catálogo, click en "Solicitar préstamo" (ej. Don Quijote)
--> Mensaje: "✅ Solicitud enviada. Código: ABC123"
+-> Mensaje: " Solicitud enviada. Código: ABC123"
 - Ir a "Mis préstamos" -> Estado: pendiente
 
 PRUEBA 3 - APROBAR (ADMIN):
@@ -34,4 +34,4 @@ PRUEBA 4 - DEVOLUCIÓN (ADMIN):
 PRUEBA 5 - VALIDACIÓN DUPLICADOS:
 - Login usuario normal (juan@example.com / juan123)
 - Solicitar mismo libro dos veces
--> Mensaje: "❌ Ya tienes un préstamo activo"
+-> Mensaje: "Ya tienes un préstamo activo"
